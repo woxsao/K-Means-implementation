@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 from sklearn.datasets import make_blobs
 import numpy as np 
 from KMeansImplementation import KMeansImplementation
@@ -6,31 +7,19 @@ points, categories = make_blobs(n_samples = 150, n_features = 2, centers = 4, cl
 points = np.array(points)
 
 kmeans = KMeansImplementation(k = 4, max_iter = 200, tol = 0.05)
-blob_assignment, centroid_coordinates = kmeans.kmean_implement(points)
-print(blob_assignment)
-print(centroid_coordinates)
-
-"""def initialize_centroids(points, k):
-    shuffled_points = points.copy()
-    np.random.shuffle(shuffled_points)
-    return shuffled_points[:k]
-
-centroid_list = np.array(initialize_centroids(points, 4))
-
-def find_closest_centroid(points, centroids):
-    #returns an array containing the index to the nearest centroid for each point
-    distances = np.linalg.norm(centroids[:, np.newaxis] - points, axis = 2)
-    return np.argmin(distances, axis=0)
-
-closest_centroids = find_closest_centroid(points, centroid_list)
+blob_assignment, centroid_coordinates, sse = kmeans.kmean_implement(points, categories = categories, blobs = True, plus = True)
 
 
-def find_new_centroids(points, centroids, assigned_centroids):
-        return_array = []
-        for i in range(centroids.shape[0]):
-            return_array.append(points[assigned_centroids==i].mean(axis = 0)) 
-        return np.array(return_array)
-    
-
-print(closest_centroids)
-print(find_new_centroids(points, centroid_list, closest_centroids))"""
+"""
+x = range(1, 10)
+y = []
+for i in range(1, 10):
+    kmeans = KMeansImplementation(k = i, max_iter = 200, tol = 0.05)
+    blob_assignment, centroid_coordinates, sse = kmeans.kmean_implement(points, categories, blobs = True, plus = True)
+    y.append(sse)"""
+"""plt.figure()
+plt.plot(x,y, '.b-')
+plt.title('Elbow plot')
+plt.xlabel('Number of clusters')
+plt.ylabel('SSE')
+plt.show()"""
