@@ -1,27 +1,23 @@
 """
 TODO:
-- coordinate function is currently only tuned for bw images (only have one color value, essentially just traversing
-a 2d array instead of a 3d one). Optimize later to support RGB and HSV
+- convert the coordinates to rgb for hsv segmentation BEFORE running the segmentation results function
+- Do elbow graph for HSV
+- do other analyses 
 """
 
-from os import DirEntry
 from matplotlib import pyplot as plt
-from numpy.lib.function_base import vectorize
 from sklearn.datasets import make_blobs
 import numpy as np 
 from KMeansImplementation import KMeansImplementation
 from PIL import Image
-
+import math
 
 def showSegmentationResults(clusterCenters, classification, nbRows, nbCols, k, savefig = False, mode = 'rgb'):
     segmentation = clusterCenters[classification]
-
+    print(segmentation.shape)
     imSeg = segmentation.reshape(nbRows, nbCols, 3).astype(np.uint8)
     plt.figure()
-    if mode == 'hsv':
-        plt.imshow(Image.fromarray(imSeg, mode = 'HSV'))
-    else:
-        plt.imshow(Image.fromarray(imSeg))
+    plt.imshow(Image.fromarray(imSeg))
     
     plt.title('K = '+ str(k))
     plt.draw()
@@ -35,10 +31,8 @@ def showSegmentationResults(clusterCenters, classification, nbRows, nbCols, k, s
     plt.show()
     
 def convert_rgb_to_bw(image_array):
-    print('original image array: ', image_array.shape)
     bw_array = np.average(image_array, axis = 2)
     return_array = np.repeat(bw_array[:, :, np.newaxis], repeats = 3, axis = 2)
-    print('bw array shape: ', return_array.shape)
     return return_array
 
 def convert_rgb_to_hsv(r,g,b):
@@ -62,6 +56,39 @@ def convert_rgb_to_hsv(r,g,b):
         s = (color_diff/color_max)*100
     v = color_max *100
     return h,s,v
+def convert_hsv_to_rgb(h,s,v):
+    r1,g1,b1 = 0,0,0
+    c = (v/100)*(s/100)
+    x = c*(1-abs(((h/60)%2)-1))
+    if(h >=0 and h< 60):
+        r1 = c
+        g1 = x
+        b1 = 0
+    elif(h>=60 and h < 120):
+        r1 = x
+        g1 = c
+        b1 = 0
+    elif(h >= 120 and h < 180):
+        r1 = 0
+        g1 = c
+        b1 = x
+    elif(h >= 180 and h < 240):
+        r1 = 0
+        g1 = x
+        b1 = c
+    elif(h >= 240 and h < 300):
+        r1 = x
+        g1 = 0
+        b1 = c
+    else:
+        r1 = c
+        g1 = 0 
+        b1 = x
+    m = (v/100)-c 
+    r = (r1 + m)*255
+    g = (g1 + m)*255
+    b = (b1 + m) * 255
+    return r,g,b
 
 def dup_columns(a, index, num = 1):
     return np.insert(a, [index+1]*num,a[:, index], axis = 2)
@@ -154,14 +181,28 @@ elbow_plot(10, umbrella_flattened, k_min=2)"""
 
 #convert RGB to HSV
 
-print(umbrella[:, :, 0].shape)
-hsvfunc = np.vectorize(convert_rgb_to_hsv)
 
-for i in range(2, 11):
-    h,s,v = hsvfunc(umbrella[:,:, 0],umbrella[:,:, 1], umbrella[:,:, 2])
-    umbrella_hsv = np.dstack((h,s,v))
-    umbrella_flattened = coordinate_image(np.array(umbrella_hsv))
+hsvfunc = np.vectorize(convert_rgb_to_hsv)
+rgbfunc = np.vectorize(convert_hsv_to_rgb)
+h,s,v = hsvfunc(umbrella[:,:, 0],umbrella[:,:, 1], umbrella[:,:, 2])
+umbrella_hsv = np.dstack((h,s,v))
+umbrella_flattened = coordinate_image(np.array(umbrella_hsv))
+kmeans = KMeansImplementation(k =10, max_iter = 200, tol = 0.05)
+assigned_centroids, centroid_coordinates, sse = kmeans.kmean_implement(umbrella_flattened, plus = True)
+r,g,b = rgbfunc(centroid_coordinates[:,0], centroid_coordinates[:,1], centroid_coordinates[:,2])
+hsv_rgb = np.stack((r,g,b), axis = 1)
+    
+print(hsv_rgb.shape)
+print(centroid_coordinates.shape)
+showSegmentationResults(hsv_rgb,assigned_centroids,umbrella.shape[0], umbrella.shape[1], 10, savefig = False, mode = 'hsv')
+
+"""for i in range(2, 11):  
     kmeans = KMeansImplementation(k =i, max_iter = 200, tol = 0.05)
     assigned_centroids, centroid_coordinates, sse = kmeans.kmean_implement(umbrella_flattened, plus = True)
-    print(centroid_coordinates)
-    showSegmentationResults(centroid_coordinates,assigned_centroids,umbrella.shape[0], umbrella.shape[1], i, savefig = True, mode = 'hsv')
+    r,g,b = rgbfunc(centroid_coordinates[:,0], centroid_coordinates[:,1], centroid_coordinates[:,2])
+    hsv_rgb = np.stack((r,g,b), axis = 1)
+    
+    print(hsv_rgb.shape)
+    print(centroid_coordinates.shape)
+    showSegmentationResults(hsv_rgb,assigned_centroids,umbrella.shape[0], umbrella.shape[1], i, savefig = False, mode = 'hsv')
+"""
