@@ -10,16 +10,16 @@ kmeans = KMeansImplementation(k = 4, max_iter = 200, tol = 0.05)
 blob_assignment, centroid_coordinates, sse = kmeans.kmean_implement(points, categories = categories, blobs = True, plus = True)
 
 
-"""
+
 x = range(1, 10)
 y = []
 for i in range(1, 10):
     kmeans = KMeansImplementation(k = i, max_iter = 200, tol = 0.05)
-    blob_assignment, centroid_coordinates, sse = kmeans.kmean_implement(points, categories, blobs = True, plus = True)
-    y.append(sse)"""
-"""plt.figure()
+    blob_assignment, centroid_coordinates, sse = kmeans.kmean_implement(points, categories, blobs = True, clustering = 'plus')
+    y.append(sse)
+plt.figure()
 plt.plot(x,y, '.b-')
 plt.title('Elbow plot')
 plt.xlabel('Number of clusters')
 plt.ylabel('SSE')
-plt.show()"""
+plt.show()
